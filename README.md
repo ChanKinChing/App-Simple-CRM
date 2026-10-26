@@ -155,14 +155,29 @@ cd backend
 mvnw verify
 ```
 
-32 個測試，全部對真實 PostgreSQL（`simplecrm_test`）執行，不使用 H2：
+32 個測試（18 個 Mockito 單元測試 + 14 個 Spring 整合測試，後者打真實 PostgreSQL `simplecrm_test`，不使用 H2）：
 
-- `CustomerServiceTest`（8）：搜尋、排序白名單、fallback 行為、404
-- `AuthServiceTest`（4）：登入成功／失敗、token 內容、角色
-- `FollowUpServiceTest`（4）、`ReportServiceTest`（2）
+- `CustomerServiceTest`（8）、`AuthServiceTest`（4）、`FollowUpServiceTest`（4）、`ReportServiceTest`（2）：Mockito 單元測試
 - `CustomerApiIntegrationTest`（10）：401／403／400／404、分頁總數、CRUD 全流程
 - `CorsConfigurationTest`（3）：允許的來源（localhost 與 127.0.0.1）可通過，未知來源回 403
 - `SimpleCrmApplicationTests`（1）：context 載入
+
+前端：
+
+```bat
+cd frontend
+npm run lint
+npm run build
+```
+
+### CI
+
+`.github/workflows/ci.yml`：GitHub Actions 兩個 job。
+
+- **backend**：起一個 `postgres:17-alpine` service，跑 `mvnw verify`，上傳 surefire 報告
+- **frontend**：`npm ci` → `npm run lint` → `npm run build`，上傳 `dist`
+
+測試所需的 DB 連線可透過 `TEST_DATABASE_URL` / `TEST_DATABASE_USERNAME` / `TEST_DATABASE_PASSWORD` 覆寫，因此本機與 CI 共用同一份 `application-test.yml`。
 
 ## 設計決策
 
