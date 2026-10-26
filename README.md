@@ -119,6 +119,16 @@ npm run dev
 
 Swagger UI：`http://127.0.0.1:8080/swagger-ui.html`
 
+### 一鍵啟停與冒煙測試（Windows PowerShell）
+
+```powershell
+scripts\dev-start.ps1     # 需要時才啟動 PostgreSQL / 後端 jar / Vite，並等待健康檢查
+scripts\dev-stop.ps1      # 停止前端與後端（加 -IncludeDatabase 連 PostgreSQL 一起停）
+scripts\smoke.ps1         # 12 項端到端檢查：健康、登入、401、分頁、搜尋、新增、驗證、跟進、報表、刪除
+```
+
+`dev-start` 會顯示各階段的等待秒數，`smoke.ps1` 逐項輸出 PASS/FAIL 與耗時，全部通過才回傳 exit code 0。
+
 ### 環境變數
 
 | 變數 | 預設 | 用途 |
