@@ -1,7 +1,7 @@
 # 部署與 CI（Docker / Jenkins）
 
-> 狀態：設定檔已寫好，但本機尚未安裝 Docker Desktop，**以下步驟未經實機驗證**。
-> 裝好 Docker 後請照「驗證清單」逐項確認，再更新本文件與 `README.md`。
+> 狀態（2026-10-27）：Docker Desktop 29.9.2（engine 29.9.2）已安裝，Compose 棧**已實機驗證**（見下方驗證結果）。
+> Jenkins 章節仍為待驗證設定。
 
 ## 1. Docker Compose
 
@@ -36,14 +36,22 @@ docker compose down -v
 - **映像檔**：後端 multi-stage（JDK 編譯 → JRE 執行，非 root 使用者）；前端 `npm ci` + `vite build` → nginx:alpine。
 - **資料持久化**：named volume `crm-db-data`。
 
-### 驗證清單（裝好 Docker 後）
+### 驗證結果（2026-10-27 實測）
 
-1. `docker compose build` 兩個映像檔都成功。
-2. `docker compose ps` 顯示 `db`、`backend`、`frontend` 都 healthy。
-3. 開 http://localhost:8082 用 `admin` / `Passw0rd!` 登入，列表出現 20 筆種子客戶。
-4. 開一筆詳情、新增跟進，重整後資料仍在（DB 有寫入）。
-5. `docker compose down` 再 `up -d`，資料仍在（volume 生效）。
-6. 後端 log 沒有 CORS 錯誤，前端 console 沒有 4xx。
+| 檢查 | 結果 |
+| --- | --- |
+| `docker compose build` | 兩個映像檔建置成功，共 91 秒（Maven 依賴走容器內快取） |
+| `docker compose up -d` → `health=UP` | 42 秒；`db` healthy、`backend` healthy、`frontend` healthy |
+| 前端 `GET /` | 200，含 App 入口 |
+| SPA fallback `GET /customers/1` | 200，回 `index.html` |
+| nginx `/api` 反向代理登入 | 200，`role=ADMIN` |
+| 經代理分頁查詢 | `totalElements=20`、`size=5` |
+| 經代理報表摘要 | 200 |
+| 未帶 token 存取 | 401 |
+| 後端執行身分 | `uid=100(app)`，非 root |
+| 容器內 `SPRING_DATASOURCE_URL` | `jdbc:postgresql://db:5432/simplecrm` |
+
+尚待人工確認（非阻斷）：`compose down` 後再 `up -d` 的 volume 資料保留、瀏覽器內完整操作流程（本次以 HTTP 契約驗證，未開瀏覽器）。
 
 ## 2. Jenkins（本機，port 8081）
 

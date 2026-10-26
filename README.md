@@ -97,8 +97,9 @@ App-Simple-CRM-1.0.0/
 前置需求：JDK 17、Node.js 20+、PostgreSQL 17（本機使用可攜版）。
 
 ```bat
-:: 1. 啟動可攜版 PostgreSQL（另有 stop-pg.bat）
-%PG_HOME%\start-pg.bat
+:: 1. 啟動本機 PostgreSQL 17（任何安裝方式皆可，預設監聽 127.0.0.1:5432）
+::    若使用可攜版：set PG_HOME=<資料夾> 後執行 %PG_HOME%\start-pg.bat
+pg_ctl -D <你的資料目錄> start
 
 :: 2. 後端（http://127.0.0.1:8080）
 cd backend
@@ -129,6 +130,8 @@ scripts\smoke.ps1         # 12 項端到端檢查：健康、登入、401、分�
 
 `dev-start` 會顯示各階段的等待秒數，`smoke.ps1` 逐項輸出 PASS/FAIL 與耗時，全部通過才回傳 exit code 0。
 
+腳本不寫死任何本機路徑：JDK 依序從 `JAVA_HOME`（process → 使用者 → 系統）與 `C:\Program Files\Eclipse Adoptium` 自動偵測 17+；PostgreSQL 需先自行啟動，或設定 `PG_HOME` 指向含 `start-pg.bat` 的可攜版資料夾。
+
 ### 環境變數
 
 | 變數 | 預設 | 用途 |
@@ -142,14 +145,14 @@ scripts\smoke.ps1         # 12 項端到端檢查：健康、登入、401、分�
 
 前端不需要環境變數：dev 由 Vite proxy 把 `/api` 轉到 8080，容器內由 nginx 反向代理，兩者都是同源請求。
 
-### Docker Compose（設定已備，未實機驗證）
+### Docker Compose（已實機驗證）
 
 ```bat
 copy .env.example .env
 docker compose up -d --build
 ```
 
-前端 http://localhost:8082（nginx）、後端 http://localhost:8080、資料存於 named volume `crm-db-data`。詳細步驟、Jenkins（8081）設定與驗證清單見 `docs/DEPLOYMENT.md`。
+前端 http://localhost:8082（nginx）、後端 http://localhost:8080、資料存於 named volume `crm-db-data`。實測（Docker 29.9.2）：建置 91 秒、整棧啟動到 `health=UP` 42 秒，`db/backend/frontend` 三個容器皆 healthy；前端 SPA fallback、`/api` 反向代理、401、分頁、報表、非 root 使用者（`uid=100(app)`）全部通過。詳細步驟、Jenkins（8081）設定與驗證清單見 `docs/DEPLOYMENT.md`。
 
 ## API
 

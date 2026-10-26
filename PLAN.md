@@ -65,4 +65,4 @@ App-Simple-CRM-1.0.0/
    - 一律使用 `mvnw`（讀 JAVA_HOME）
    - 直接執行 jar 時使用 `%JAVA_HOME%\bin\java.exe`
 3. 並行 subagent 上限 2 個（16 GB RAM）。
-4. 上傳 GitHub 前必須執行 `git-security-scan.ps1`。
+4. 上傳 GitHub 前必須先跑 secret 掃描（本機使用自製 10 層掃描工具，路徑不寫入 repo）。

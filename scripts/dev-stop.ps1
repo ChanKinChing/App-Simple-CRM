@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
-$pgHome = '%PG_HOME%'
+$pgHome = if ($env:PG_HOME) { $env:PG_HOME } else { $env:CRM_PG_HOME }
 
 function Stop-ByPort([int]$Port, [string]$Label) {
     $conns = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
@@ -31,6 +31,7 @@ Remove-Item -LiteralPath (Join-Path $env:TEMP 'crm-be.pid') -ErrorAction Silentl
 Remove-Item -LiteralPath (Join-Path $env:TEMP 'crm-fe.pid') -ErrorAction SilentlyContinue
 
 if ($IncludeDatabase) {
+    if (-not $pgHome) { Write-Host 'Database - set PG_HOME to a folder containing stop-pg.bat'; return }
     $bat = Join-Path $pgHome 'stop-pg.bat'
     if (Test-Path -LiteralPath $bat) { & $bat | Out-Null; Write-Host 'Database - stopped' }
 } else {

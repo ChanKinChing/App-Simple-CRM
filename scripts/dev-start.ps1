@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [switch]$SkipFrontend,
     [int]$TimeoutSeconds = 90
@@ -6,11 +6,30 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot'
-$pgHome = '%PG_HOME%'
+$pgHome = if ($env:PG_HOME) { $env:PG_HOME } else { $env:CRM_PG_HOME }
 $jar = Join-Path $root 'backend\target\simple-crm-0.0.1-SNAPSHOT.jar'
 $beLog = Join-Path $env:TEMP 'crm-be.log'
 $feLog = Join-Path $env:TEMP 'crm-fe.log'
+
+function Resolve-Java17 {
+    $candidates = @($env:JAVA_HOME)
+    $candidates += [Environment]::GetEnvironmentVariable('JAVA_HOME', 'User')
+    $candidates += [Environment]::GetEnvironmentVariable('JAVA_HOME', 'Machine')
+    $candidates += @(Get-ChildItem 'C:\Program Files\Eclipse Adoptium' -Directory -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending | Select-Object -ExpandProperty FullName)
+    $pathJava = (Get-Command java -ErrorAction SilentlyContinue).Source
+    if ($pathJava) { $candidates += (Split-Path -Parent (Split-Path -Parent $pathJava)) }
+    foreach ($jdkHome in $candidates) {
+        if (-not $jdkHome) { continue }
+        $exe = Join-Path $jdkHome 'bin\java.exe'
+        if (-not (Test-Path -LiteralPath $exe)) { continue }
+        $prevEap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try { $version = (& $exe -version 2>&1 | Select-Object -First 1) } finally { $ErrorActionPreference = $prevEap }
+        if ($version -match '"(\d+)' -and [int]$Matches[1] -ge 17) { return $exe }
+    }
+    return $null
+}
 
 function Test-Port([int]$Port) {
     [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
@@ -30,6 +49,9 @@ Write-Host "[1/3] PostgreSQL 5432" -NoNewline
 if (Test-Port 5432) {
     Write-Host " - already listening"
 } else {
+    if (-not $pgHome) {
+        throw 'PostgreSQL is not listening on 5432. Start it manually, or set $env:PG_HOME to a folder containing start-pg.bat.'
+    }
     Write-Host " - starting portable instance" -NoNewline
     & (Join-Path $pgHome 'start-pg.bat') | Out-Null
     if (-not (Wait-Port 5432 $TimeoutSeconds)) { throw 'PostgreSQL did not start' }
@@ -41,7 +63,9 @@ if (Test-Port 8080) {
     Write-Host " - already listening"
 } else {
     if (-not (Test-Path -LiteralPath $jar)) { throw "Missing jar: $jar (run backend\mvnw.cmd package)" }
-    $proc = Start-Process -FilePath (Join-Path $env:JAVA_HOME 'bin\java.exe') `
+    $javaExe = Resolve-Java17
+    if (-not $javaExe) { throw 'No JDK 17+ found. Set JAVA_HOME to a JDK 17 installation or add java 17+ to PATH.' }
+    $proc = Start-Process -FilePath $javaExe `
         -ArgumentList '-jar', $jar `
         -WorkingDirectory (Join-Path $root 'backend') `
         -RedirectStandardOutput $beLog -RedirectStandardError ($beLog -replace '\.log$', '.err') `
