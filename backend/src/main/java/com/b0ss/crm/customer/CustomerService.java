@@ -100,11 +100,12 @@ public class CustomerService {
         Sort.Direction direction = Sort.Direction.DESC;
         if (sort != null && !sort.isBlank()) {
             String[] parts = sort.split(",");
-            if (SORTABLE.contains(parts[0].trim())) {
-                field = parts[0].trim();
-            }
-            if (parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim())) {
-                direction = Sort.Direction.ASC;
+            String candidate = parts[0].trim();
+            if (SORTABLE.contains(candidate)) {
+                field = candidate;
+                if (parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim())) {
+                    direction = Sort.Direction.ASC;
+                }
             }
         }
         return PageRequest.of(safePage, safeSize, Sort.by(direction, field));

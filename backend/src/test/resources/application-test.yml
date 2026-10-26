@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/simplecrm_test
+    username: crm_app
+    password: crm_dev_local
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+app:
+  seed-demo: false
+  jwt:
+    secret: test-only-secret-value-that-is-long-enough-for-hs256-123456
+    ttl-minutes: 30
+    issuer: simple-crm-test
+
+logging:
+  level:
+    org.hibernate.SQL: warn
