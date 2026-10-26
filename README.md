@@ -129,7 +129,17 @@ Swagger UI：`http://127.0.0.1:8080/swagger-ui.html`
 | `JWT_TTL_MINUTES` | `60` | token 有效期 |
 | `APP_SEED_DEMO` | `true` | 首次啟動是否寫入示範資料 |
 | `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | 逗號分隔的允許來源 |
-| `VITE_API_BASE_URL` | 空（走 Vite proxy） | 前端直連後端時使用 |
+
+前端不需要環境變數：dev 由 Vite proxy 把 `/api` 轉到 8080，容器內由 nginx 反向代理，兩者都是同源請求。
+
+### Docker Compose（設定已備，未實機驗證）
+
+```bat
+copy .env.example .env
+docker compose up -d --build
+```
+
+前端 http://localhost:8082（nginx）、後端 http://localhost:8080、資料存於 named volume `crm-db-data`。詳細步驟、Jenkins（8081）設定與驗證清單見 `docs/DEPLOYMENT.md`。
 
 ## API
 
@@ -195,7 +205,7 @@ npm run build
 - 尚無 refresh token、登出黑名單、登入嘗試次數限制。
 - 客戶無 soft delete、無審計欄位歷史；刪除為硬刪除（連同跟進記錄）。
 - 多使用者同時編輯同一客戶時後寫入者覆蓋（未做樂觀鎖）。
-- Docker／Jenkins／GitHub Actions 尚未接上（見 Roadmap）。
+- Docker Compose 與 Jenkinsfile 已寫好但**尚未實機驗證**（本機未安裝 Docker Desktop），步驟見 `docs/DEPLOYMENT.md`。
 
 ## Roadmap
 
@@ -204,6 +214,7 @@ npm run build
 - [x] 階段 3–4 後端 CRUD、JWT、RBAC
 - [x] 階段 5 服務層與 API 整合測試
 - [x] 階段 6 React 前端（登入／列表／詳情／表單／明暗主題）
-- [ ] 階段 7 Jenkins（Docker 8081）+ GitHub Actions
-- [ ] 階段 8 Dockerfile、compose、部署說明
+- [x] 階段 7 GitHub Actions（後端測試 + 前端 lint/build）
+- [ ] 階段 7b Jenkins（Docker 8081，Jenkinsfile 已備，待 Docker 驗證）
+- [x] 階段 8 Dockerfile、compose、部署文件、Swagger UI（容器待實測）
 - [ ] 階段 9 逐檔導讀與 demo 錄影

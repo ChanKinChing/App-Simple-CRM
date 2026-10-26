@@ -29,8 +29,8 @@
 | 4 | Spring Security + JWT + 角色 | AI | 2.5–3.5 h | 完成（HS256 + `@PreAuthorize`） |
 | 5 | JUnit + MockMvc + 整合測試 | AI | 2.5–3 h | 完成（32 個測試，真實 PostgreSQL） |
 | 6 | React 四頁（登入／列表／詳情／表單） | AI | 6–8 h | 完成（含明暗主題、手機版、截圖） |
-| 7 | Jenkins（Docker 8081）+ GitHub Actions | AI | 2–3 h | 未開始（Docker Desktop 待安裝） |
-| 8 | Dockerfile、compose、README、Swagger UI | AI | 2–3 h | 部分（README／Swagger 完成，容器未做） |
+| 7 | Jenkins（Docker 8081）+ GitHub Actions | AI | 2–3 h | GitHub Actions 完成；Jenkinsfile 已寫，待 Docker 驗證 |
+| 8 | Dockerfile、compose、README、Swagger UI | AI | 2–3 h | README／Swagger 完成；Dockerfile + compose 已寫，待 Docker 驗證 |
 | 9 | 使用者逐檔讀懂、改寫、錄 demo | 使用者 | 8–12 h | 未開始 |
 
 ## 實作期間發現並修正的問題

@@ -1,0 +1,47 @@
+name: simple-crm
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: simplecrm
+      POSTGRES_USER: crm_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_dev_local}
+    volumes:
+      - crm-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_app -d simplecrm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/simplecrm
+      SPRING_DATASOURCE_USERNAME: crm_app
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-crm_dev_local}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please-32bytes-minimum-1234567890}
+      JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-60}
+      APP_SEED_DEMO: ${APP_SEED_DEMO:-true}
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-8082}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8082}:80"
+    restart: unless-stopped
+
+volumes:
+  crm-db-data:
