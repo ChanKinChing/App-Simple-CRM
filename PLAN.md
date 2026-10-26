@@ -20,18 +20,23 @@
 
 ## 階段與預估
 
-| 階段 | 內容 | 執行者 | 預估 |
-| --- | --- | --- | --- |
-| 0 | 環境修復、專案骨架、可啟動驗證 | AI | 1.5–2 h |
-| 1 | spring.io 10 個 guide | 使用者 | 12–18 h |
-| 2 | OpenAPI 契約、DDL、命名規範 | AI | 1–1.5 h |
-| 3 | 後端分層 CRUD、驗證、全域異常、分頁搜尋 | AI | 5–6 h |
-| 4 | Spring Security + JWT + 角色 | AI | 2.5–3.5 h |
-| 5 | JUnit + MockMvc + 整合測試 | AI | 2.5–3 h |
-| 6 | React 四頁（登入／列表／詳情／表單） | AI | 6–8 h |
-| 7 | Jenkins（Docker 8081）+ GitHub Actions | AI | 2–3 h |
-| 8 | Dockerfile、compose、README、Swagger UI | AI | 2–3 h |
-| 9 | 使用者逐檔讀懂、改寫、錄 demo | 使用者 | 8–12 h |
+| 階段 | 內容 | 執行者 | 預估 | 狀態 |
+| --- | --- | --- | --- | --- |
+| 0 | 環境修復、專案骨架、可啟動驗證 | AI | 1.5–2 h | 完成（2026-10-26，`mvnw package`、health UP） |
+| 1 | spring.io 10 個 guide | 使用者 | 12–18 h | 跳過（使用者選擇由 AI 直接交付） |
+| 2 | OpenAPI 契約、DDL、命名規範 | AI | 1–1.5 h | 完成（`docs/openapi.yaml`、`V1__init.sql`） |
+| 3 | 後端分層 CRUD、驗證、全域異常、分頁搜尋 | AI | 5–6 h | 完成 |
+| 4 | Spring Security + JWT + 角色 | AI | 2.5–3.5 h | 完成（HS256 + `@PreAuthorize`） |
+| 5 | JUnit + MockMvc + 整合測試 | AI | 2.5–3 h | 完成（32 個測試，真實 PostgreSQL） |
+| 6 | React 四頁（登入／列表／詳情／表單） | AI | 6–8 h | 完成（含明暗主題、手機版、截圖） |
+| 7 | Jenkins（Docker 8081）+ GitHub Actions | AI | 2–3 h | 未開始（Docker Desktop 待安裝） |
+| 8 | Dockerfile、compose、README、Swagger UI | AI | 2–3 h | 部分（README／Swagger 完成，容器未做） |
+| 9 | 使用者逐檔讀懂、改寫、錄 demo | 使用者 | 8–12 h | 未開始 |
+
+## 實作期間發現並修正的問題
+
+1. **排序 fallback**：原本非法排序欄位只忽略 direction，仍把非法 property 送進 JPA；改為整組退回 `createdAt,desc`，並加測試。
+2. **CORS 只允許 `localhost:5173`**：用 `127.0.0.1:5173` 開前端時，Spring 對未允許的 Origin 直接回 **403**（不是缺少 CORS header），登入表單因此顯示「Request failed with status code 403」。已改為逗號分隔清單（`APP_CORS_ALLOWED_ORIGINS`），並新增 `CorsConfigurationTest` 鎖住行為。
 
 ## Port 分配
 
