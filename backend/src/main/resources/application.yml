@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: simple-crm
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/simplecrm}
+    username: ${SPRING_DATASOURCE_USERNAME:crm_app}
+    password: ${SPRING_DATASOURCE_PASSWORD:crm_dev_local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-please-32bytes-minimum-1234567890}
+    ttl-minutes: ${JWT_TTL_MINUTES:60}
+    issuer: simple-crm
+  seed-demo: ${APP_SEED_DEMO:true}
+  cors-allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

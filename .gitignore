@@ -1,0 +1,37 @@
+# Build output
+target/
+build/
+dist/
+out/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets and local data
+.env
+.env.*
+!.env.example
+*.log
+logs/
+data/
+pgdata/
+*.sql.gz
+*.dump
+
+# Maven wrapper jar cache
+.mvn/wrapper/maven-wrapper.jar
