@@ -2,6 +2,8 @@
 
 # Simple CRM
 
+[![CI](https://github.com/ChanKinChing/App-Simple-CRM/actions/workflows/ci.yml/badge.svg)](https://github.com/ChanKinChing/App-Simple-CRM/actions/workflows/ci.yml)
+
 中小企業客戶管理系統，作為 Java／Spring Boot 求職作品集。提供 JWT 登入、角色權限（ADMIN／SALES）、客戶資料 CRUD、關鍵字搜尋與分頁、跟進記錄時間軸、首頁統計，以及 Material Design 3 風格的前端（明暗主題自動跟隨系統）。
 
 - 後端：Spring Boot 3.5.16 / Java 17 / Maven Wrapper
