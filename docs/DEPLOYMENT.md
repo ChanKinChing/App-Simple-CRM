@@ -70,7 +70,7 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 首次登入後安裝外掛：**Docker Pipeline**、**JUnit**、**Git**（其餘用預設即可）。
 
-建立 Pipeline job → Pipeline script from SCM（或直接貼上 repo 根目錄的 `Jenkinsfile`），然後 Build。
+建立 Pipeline job → Pipeline script from SCM（指向 repo 根目錄的 `Jenkinsfile`，分支 `*/main`），然後 Build。
 
 ### Jenkinsfile 重點
 
@@ -78,8 +78,39 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 | --- | --- | --- |
 | 後端 agent | `maven:3.9-eclipse-temurin-17` | 不必在主機安裝 Maven／JDK |
 | 前端 agent | `node:22-alpine` | 與 GitHub Actions 版本一致 |
-| DB | `host.docker.internal:5432/simplecrm_test` | 重用本機可攜版 PostgreSQL；測試 profile 允許用 `TEST_DATABASE_*` 覆寫 |
-| `-v jenkins-m2:/root/.m2` | Maven 依賴快取 | 第二次建置不用重新下載 |
+| 測試指令 | `mvn -B -ntp clean verify` | `clean` 可清掉中斷建置留下的截斷資源檔（見下方踩坑） |
+| DB | 參數 `TEST_DATABASE_URL` | 預設 `host.docker.internal:5432`；DB 若在容器內就填容器名 |
+| `MAVEN_CACHE_VOLUME` | 預設 `jenkins-m2` | Maven 依賴快取，第二次建置不用重新下載 |
+
+Jenkins 本身跑在容器裡時，agent 容器看不到 Jenkins 的 workspace，也無法用容器名連到測試 DB，因此提供三個參數：
+
+| 參數 | 容器化 Jenkins 的填法 | 作用 |
+| --- | --- | --- |
+| `DOCKER_NETWORK` | `--network <jenkins 所在網路>` | 讓 agent 容器解析測試 DB 容器名 |
+| `EXTRA_DOCKER_ARGS` | `-v <workspace volume>:/var/jenkins_home/workspace` | 讓 agent 掛到同一份 workspace |
+| `TEST_DATABASE_URL` | `jdbc:postgresql://<db 容器名>:5432/simplecrm_test` | 指向容器內測試 DB |
+
+三者皆留空時就是「Jenkins 直接裝在主機」的預設情境，行為與原本相同。
+
+### 實測結果（2026-10-27，Jenkins 2.x 容器化 + 獨立 postgres 容器）
+
+| 項目 | 結果 |
+| --- | --- |
+| 建置編號／結果 | `#5` **SUCCESS**（第 5 次嘗試） |
+| 全流程耗時 | 約 62 秒（含 agent 容器啟動與 `npm ci`） |
+| 後端 | `Tests run: 32, Failures: 0, Errors: 0, Skipped: 0`，Maven `Total time: 21.292 s` |
+| 前端 | `npm ci` → `oxlint`（0 error）→ `vite build`：`dist/assets/index-*.js 331.26 kB`、`built in 265ms` |
+| 測試 DB | 容器 `crm-jenkins-pg`（`postgres:17-alpine`），agent 以容器名連線成功 |
+
+### 踩坑（實際遇到並修正）
+
+| 症狀 | 根因 | 處置 |
+| --- | --- | --- |
+| `docker: not found` | `jenkins/jenkins:lts-jdk17` 映像不含 Docker CLI | 自建映像加裝 `docker-ce-cli` |
+| 建置卡住 39 分鐘後失敗：`wrapper script does not seem to be touching the log file` | Windows + 共享 named volume 下 durable-task 的 log heartbeat 收不到 | Jenkins `JAVA_OPTS` 加 `-Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400` |
+| Maven 全部報 `Non-readable POM ... input contained no data` | 前一次被中斷的建置把下載到一半的 POM 留在 `~/.m2` | 刪掉 Maven 快取 volume 重新下載 |
+| 測試報 `Connection to 127.0.0.1:5432 refused`（明明有設 `TEST_DATABASE_URL`） | workspace 內 `target/test-classes/application-test.yml` 是 0 bytes，Maven 增量複製不會覆寫，profile 設定等於空檔 | pipeline 改用 `clean verify`；同時清掉殘留 `target` |
+| 建置成功但 pipeline 仍 FAILURE | 前一個 stage 失敗後續 stage 被跳過 | 先看 `consoleText` 的第一個 `[ERROR]`，不要只看結尾 |
 
 ### 已知風險
 
